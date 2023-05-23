@@ -30,6 +30,7 @@ const Messages: FC<MessagesProps> = ({
     pusherClient.subscribe(toPusherKey(`chat:${chatId}`));
 
     const messageHandler = (message: Message) => {
+      console.log("Message:", message);
       setMessages((prev) => [message, ...prev]);
     };
 
@@ -41,6 +42,9 @@ const Messages: FC<MessagesProps> = ({
       pusherClient.unbind("incoming-message", messageHandler);
     };
   }, [chatId]);
+
+  console.log("RENDERED MESSAGES:", messages);
+  
 
   const formatTimestamp = (timestamp: number) => {
     return format(timestamp, "HH:mm");
