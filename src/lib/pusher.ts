@@ -15,3 +15,24 @@ export const pusherClient = new PusherClient(
     cluster: "ap2",
   }
 );
+
+let heartbeatInterval: NodeJS.Timeout;
+
+function sendHeartbeat() {
+  pusherServer.trigger("presence", "heartbeat", {});
+}
+
+// Start the heartbeat mechanism
+function startHeartbeat() {
+  heartbeatInterval = setInterval(sendHeartbeat, 1000); // Send heartbeat every 10 seconds
+}
+
+pusherClient.connection.bind("connected", function () {
+  console.log("Connected to Pusher Channels");
+  startHeartbeat(); // Start sending heartbeats
+});
+
+pusherClient.connection.bind("disconnected", function () {
+  console.log("Disconnected from Pusher Channels");
+  clearInterval(heartbeatInterval); // Stop sending heartbeats
+});
