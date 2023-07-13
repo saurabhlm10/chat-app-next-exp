@@ -1,3 +1,4 @@
+import axiosInstanceBackend from "@/axios";
 import { fetchRedis } from "@/helpers/redis";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -51,18 +52,25 @@ export async function POST(req: Request) {
 
     // notify all connected chatroom clients
 
-    pusherServer.trigger(
-      toPusherKey(`chat:${chatId}`),
-      "incoming-message",
-      message
-    );
+    const incoming_message_body: ChatRequest = {
+      channel: toPusherKey(`chat:${chatId}`),
+      event: "incoming-message",
+      messageBody: JSON.stringify(message),
+    };
 
-    pusherServer.trigger(toPusherKey(`user:${friendId}:chats`), "new_message", {
-      ...message,
-      senderImg: sender.image,
-      senderName: sender.name,
-    });
+    await axiosInstanceBackend.post("/chat/sendmessage", incoming_message_body);
 
+    const new_message_body: ChatRequest = {
+      channel: toPusherKey(`user:${friendId}:chats`),
+      event: "new_message",
+      messageBody: JSON.stringify({
+        ...message,
+        senderImg: sender.image,
+        senderName: sender.name,
+      }),
+    };
+
+    await axiosInstanceBackend.post("/chat/sendmessage", new_message_body);
 
     await db.zadd(`chat:${chatId}:messages`, {
       score: timestamp,

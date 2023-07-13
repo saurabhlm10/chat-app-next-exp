@@ -38,6 +38,8 @@ export const authOptions: NextAuthOptions = {
         | string
         | null;
 
+        // console.log('dbUserResult', dbUserResult)
+
       if (!dbUserResult) {
         token.id = user!.id;
         return token;
@@ -54,11 +56,14 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
+        // console.log("TOKEN ID", token.id);
         session.user.id = token.id;
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.image = token.picture;
       }
+
+      // console.log("SESSION USER", session.user);
 
       return session;
     },

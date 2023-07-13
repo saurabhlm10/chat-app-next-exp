@@ -1,3 +1,4 @@
+import axiosInstanceBackend from "@/axios";
 import { fetchRedis } from "@/helpers/redis";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -40,7 +41,6 @@ export async function POST(req: Request) {
     if (idToAdd === session.user.id) {
       return new Response("You cannot add yourself", { status: 402 });
     }
-
     // Check if user is already added
     const isAlreadyAdded = (await fetchRedis(
       "sismember",
@@ -63,14 +63,37 @@ export async function POST(req: Request) {
       return new Response("Already a friend", { status: 400 });
     }
 
-    pusherServer.trigger(
-      toPusherKey(`user:${idToAdd}:incoming_friend_requests`),
-      'incoming_friend_requests',
-      {
+    // pusherServer.trigger(
+    //   toPusherKey(`user:${idToAdd}:incoming_friend_requests`),
+    //   "incoming_friend_requests",
+    //   {
+    //     senderId: session.user.id,
+    //     senderEmail: session.user.email,
+    //   }
+    // );
+
+    const incoming_friend_requests = toPusherKey(
+      `user:${idToAdd}:incoming_friend_requests`
+    );
+
+    const incoming_friend_requests_body: ChatRequest = {
+      channel: incoming_friend_requests,
+      event: "incoming_friend_requests",
+      messageBody: JSON.stringify({
         senderId: session.user.id,
-        senderEmail: session.user.email
-      }
-    )
+        senderEmail: session.user.email,
+      }),
+    };
+
+    await axiosInstanceBackend.post("/chat/sendMessage", incoming_friend_requests_body);
+    // pusherServer.trigger(
+    //   toPusherKey(`user:${idToAdd}:incoming_friend_requests`),
+    //   "incoming_friend_requests",
+    //   {
+    //     senderId: session.user.id,
+    //     senderEmail: session.user.email,
+    //   }
+    // );
 
     // After validation checks, add friend request
     db.sadd(`user:${idToAdd}:incoming_friend_requests`, session.user.id);
